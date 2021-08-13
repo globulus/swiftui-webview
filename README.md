@@ -2,9 +2,9 @@
 
 Fully functional, SwiftUI-ready WebView for iOS and MacOS. Actions and state are both delivered via SwiftUI `@Binding`s, meaking it dead-easy to integrate into any existing SwiftUI View.
 
-![Preview iOS](https://github.com/globulus/swiftui-circle-progress-bar/blob/main/Images/preview_ios.gif?raw=true)
+![Preview iOS](https://github.com/globulus/swiftui-webview/blob/main/Images/preview_ios.gif?raw=true)
 
-![Preview macOS](https://github.com/globulus/swiftui-circle-progress-bar/blob/main/Images/preview_macos.gif?raw=true)
+![Preview macOS](https://github.com/globulus/swiftui-webview/blob/main/Images/preview_macos.gif?raw=true)
 
 ## Installation
 
