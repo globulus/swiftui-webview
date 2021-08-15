@@ -5,6 +5,7 @@ import Foundation
 public enum WebViewAction {
     case idle,
          load(URLRequest),
+         loadHTML(String),
          reload,
          goBack,
          goForward
@@ -123,6 +124,8 @@ public struct WebView: UIViewRepresentable {
             break
         case .load(let request):
             uiView.load(request)
+        case .loadHTML(let html):
+            uiView.loadHTMLString(html, baseURL: nil)
         case .reload:
             uiView.reload()
         case .goBack:
@@ -172,6 +175,8 @@ public struct WebView: NSViewRepresentable {
             break
         case .load(let request):
             uiView.load(request)
+        case .loadHTML(let html):
+            uiView.loadHTMLString(html, baseURL: nil)
         case .reload:
             uiView.reload()
         case .goBack:
@@ -209,6 +214,9 @@ struct WebViewTest: View {
     
     private var navigationToolbar: some View {
         HStack(spacing: 10) {
+            Button("Test HTML") {
+                action = .loadHTML("<html><body><b>Hello World!</b></body></html>")
+            }
             TextField("Address", text: $address)
             if state.isLoading {
                 if #available(iOS 14, macOS 11, *) {
@@ -227,7 +235,7 @@ struct WebViewTest: View {
             Button(action: {
                 action = .reload
             }) {
-                if #available(macOS 11, *) {
+                if #available(iOS 14, macOS 11, *) {
                     Image(systemName: "arrow.counterclockwise")
                         .imageScale(.large)
                 } else {
@@ -238,7 +246,7 @@ struct WebViewTest: View {
                 Button(action: {
                     action = .goBack
                 }) {
-                    if #available(macOS 11, *) {
+                    if #available(iOS 14, macOS 11, *) {
                         Image(systemName: "chevron.left")
                             .imageScale(.large)
                     } else {
@@ -250,7 +258,7 @@ struct WebViewTest: View {
                 Button(action: {
                     action = .goForward
                 }) {
-                    if #available(macOS 11, *) {
+                    if #available(iOS 14, macOS 11, *) {
                         Image(systemName: "chevron.right")
                             .imageScale(.large)
                     } else {

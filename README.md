@@ -15,6 +15,7 @@ This component is distributed as a **Swift package**.
  * The **action** binding is used to control the WebView - whichever action you want it to perform, just set the variable's value to it. Available actions:
    + `idle` - does nothing and can be used as the default value.
    + `load(URLRequest)` - loads the given request.
+   + `loadHTML(String)` - loads custom HTML string.
    + `reload`
    + `goBack`
    + `goForward`
