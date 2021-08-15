@@ -1,6 +1,6 @@
 # Stateful SwiftUI WebView for iOS and MacOS
 
-Fully functional, SwiftUI-ready WebView for iOS and MacOS. Actions and state are both delivered via SwiftUI `@Binding`s, meaking it dead-easy to integrate into any existing SwiftUI View.
+Fully functional, SwiftUI-ready WebView for iOS 13+ and MacOS 10.15+. Actions and state are both delivered via SwiftUI `@Binding`s, meaking it dead-easy to integrate into any existing SwiftUI View.
 
 ![Preview iOS](https://github.com/globulus/swiftui-webview/blob/main/Images/preview_ios.gif?raw=true)
 
@@ -108,4 +108,4 @@ struct WebViewTest: View {
 
 ## Recipe
 
-Check out [SwiftUIRecipes.com](https://swiftuirecipes.com) for more **SwiftUI recipes**!
+For a more detailed description of the code, [visit this recipe](https://swiftuirecipes.com/blog/webview-in-swiftui). Check out [SwiftUIRecipes.com](https://swiftuirecipes.com) for more **SwiftUI recipes**!

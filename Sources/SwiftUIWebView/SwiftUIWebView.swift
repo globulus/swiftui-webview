@@ -211,7 +211,7 @@ struct WebViewTest: View {
         HStack(spacing: 10) {
             TextField("Address", text: $address)
             if state.isLoading {
-                if #available(iOS 14, macOS 10.15, *) {
+                if #available(iOS 14, macOS 11, *) {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle())
                 } else {
@@ -227,24 +227,35 @@ struct WebViewTest: View {
             Button(action: {
                 action = .reload
             }) {
-                Image(systemName: "arrow.counterclockwise")
-                    .imageScale(.large)
+                if #available(macOS 11, *) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .imageScale(.large)
+                } else {
+                    Text("Reload")
+                }
             }
             if state.canGoBack {
                 Button(action: {
                     action = .goBack
                 }) {
-                    Image(systemName: "chevron.left")
-                        .imageScale(.large)
+                    if #available(macOS 11, *) {
+                        Image(systemName: "chevron.left")
+                            .imageScale(.large)
+                    } else {
+                        Text("<")
+                    }
                 }
             }
             if state.canGoForward {
                 Button(action: {
                     action = .goForward
                 }) {
-                Image(systemName: "chevron.right")
-                    .imageScale(.large)
-                    
+                    if #available(macOS 11, *) {
+                        Image(systemName: "chevron.right")
+                            .imageScale(.large)
+                    } else {
+                        Text(">")
+                    }
                 }
             }
         }.padding()
