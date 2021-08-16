@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 import Foundation
 
-public enum WebViewAction {
+public enum WebViewAction: Equatable {
     case idle,
          load(URLRequest),
          loadHTML(String),
@@ -14,12 +14,14 @@ public enum WebViewAction {
 public struct WebViewState {
     public internal(set) var isLoading: Bool
     public internal(set) var pageTitle: String?
+    public internal(set) var pageHTML: String?
     public internal(set) var error: Error?
     public internal(set) var canGoBack: Bool
     public internal(set) var canGoForward: Bool
     
     public static let empty = WebViewState(isLoading: false,
                                            pageTitle: nil,
+                                           pageHTML: nil,
                                            error: nil,
                                            canGoBack: false,
                                            canGoForward: false)
@@ -47,9 +49,21 @@ extension WebViewCoordinator: WKNavigationDelegate {
         setLoading(false)
         
         webView.evaluateJavaScript("document.title") { (response, error) in
-            var newState = self.webView.state
-            newState.pageTitle = response as? String
-            self.webView.state = newState
+            if let title = response as? String {
+                var newState = self.webView.state
+                newState.pageTitle = title
+                self.webView.state = newState
+            }
+        }
+        
+        if self.webView.htmlInState {
+            webView.evaluateJavaScript("document.documentElement.outerHTML.toString()") { (response, error) in
+                if let html = response as? String {
+                    var newState = self.webView.state
+                    newState.pageHTML = html
+                    self.webView.state = newState
+                }
+            }
         }
     }
     
@@ -91,13 +105,16 @@ public struct WebView: UIViewRepresentable {
     @Binding var action: WebViewAction
     @Binding var state: WebViewState
     let restrictedPages: [String]?
+    let htmlInState: Bool
     
     public init(action: Binding<WebViewAction>,
                 state: Binding<WebViewState>,
-                restrictedPages: [String]? = nil) {
+                restrictedPages: [String]? = nil,
+                htmlInState: Bool = false) {
         _action = action
         _state = state
         self.restrictedPages = restrictedPages
+        self.htmlInState = htmlInState
     }
     
     public func makeCoordinator() -> WebViewCoordinator {
@@ -119,13 +136,16 @@ public struct WebView: UIViewRepresentable {
     }
     
     public func updateUIView(_ uiView: WKWebView, context: Context) {
+        if action == .idle {
+            return
+        }
         switch action {
         case .idle:
             break
         case .load(let request):
             uiView.load(request)
-        case .loadHTML(let html):
-            uiView.loadHTMLString(html, baseURL: nil)
+        case .loadHTML(let pageHTML):
+            uiView.loadHTMLString(pageHTML, baseURL: nil)
         case .reload:
             uiView.reload()
         case .goBack:
@@ -143,13 +163,16 @@ public struct WebView: NSViewRepresentable {
     @Binding var action: WebViewAction
     @Binding var state: WebViewState
     let restrictedPages: [String]?
+    let htmlInState: Bool
     
     public init(action: Binding<WebViewAction>,
                 state: Binding<WebViewState>,
-                restrictedPages: [String]? = nil) {
+                restrictedPages: [String]? = nil,
+                htmlInState: Bool = false) {
         _action = action
         _state = state
         self.restrictedPages = restrictedPages
+        self.htmlInState = htmlInState
     }
     
     public func makeCoordinator() -> WebViewCoordinator {
@@ -170,6 +193,9 @@ public struct WebView: NSViewRepresentable {
     }
     
     public func updateNSView(_ uiView: WKWebView, context: Context) {
+        if action == .idle {
+            return
+        }
         switch action {
         case .idle:
             break
@@ -202,7 +228,10 @@ struct WebViewTest: View {
             Divider()
             WebView(action: $action,
                     state: $state,
-                    restrictedPages: ["apple.com"])
+                    restrictedPages: ["apple.com"],
+                    htmlInState: true)
+            Text(state.pageHTML ?? "")
+                .lineLimit(nil)
             Spacer()
         }
     }

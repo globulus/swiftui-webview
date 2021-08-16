@@ -22,10 +22,12 @@ This component is distributed as a **Swift package**.
  * The **state** binding reports back the current state of the WebView. Available data:
    + `isLoading` - `true` if the WebView is currently loading a page.
    + `pageTitle` - the title of the currently loaded page, or `nil` if it can't be obtained.
+   + `pageHTML` - the HTML code of the page content. Set `htmlInState: true` in `WebView` initializer to receive this update.
    + `error` - set if an error ocurred while loading the page, `nil` otherwise.
    + `canGoBack`
    + `canGoForward`
  * The optional **restrictedPages** array allows you to specify hosts which the web view won't load.
+ * **htmlInState** dictates if the `state` update will contain `pageHTML`. This is disabled by default as it's a costly operation.
 
 ```swift
 import SwiftUIWebView
