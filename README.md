@@ -12,6 +12,14 @@ This component is distributed as a **Swift package**.
 
 ## Sample usage
 
+* Pass the **config** parameter to optionally set various web view properties:
+  + `javaScriptEnabled`
+  + `allowsBackForwardNavigationGestures`
+  + `allowsInlineMediaPlayback`
+  + `mediaPlaybackRequiresUserAction`
+  + `isScrollEnabled`
+  + `isOpaque`
+  + `backgroundColor`
  * The **action** binding is used to control the WebView - whichever action you want it to perform, just set the variable's value to it. Available actions:
    + `idle` - does nothing and can be used as the default value.
    + `load(URLRequest)` - loads the given request.
@@ -19,6 +27,7 @@ This component is distributed as a **Swift package**.
    + `reload`
    + `goBack`
    + `goForward`
+   + `evaluateJS(String, (Result<Any?, Error>) -> Void)
  * The **state** binding reports back the current state of the WebView. Available data:
    + `isLoading` - `true` if the WebView is currently loading a page.
    + `pageTitle` - the title of the currently loaded page, or `nil` if it can't be obtained.
@@ -28,6 +37,7 @@ This component is distributed as a **Swift package**.
    + `canGoForward`
  * The optional **restrictedPages** array allows you to specify hosts which the web view won't load.
  * **htmlInState** dictates if the `state` update will contain `pageHTML`. This is disabled by default as it's a costly operation.
+ * Optional **schemeHandlers** allow you to invoke a custom callback whenever the user navigates to a site with the given scheme.
 
 ```swift
 import SwiftUIWebView
@@ -112,3 +122,10 @@ struct WebViewTest: View {
 ## Recipe
 
 For a more detailed description of the code, [visit this recipe](https://swiftuirecipes.com/blog/webview-in-swiftui). Check out [SwiftUIRecipes.com](https://swiftuirecipes.com) for more **SwiftUI recipes**!
+
+## Changelog
+
+* 1.0.3 - Added config, JS evaluation and scheme handlers.
+* 1.0.2 - Added site HTML as response.
+* 1.0.1 - Added suport for loading custom HTML.
+* 1.0.0 - Initial release.

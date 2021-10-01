@@ -8,10 +8,44 @@ public enum WebViewAction: Equatable {
          loadHTML(String),
          reload,
          goBack,
-         goForward
+         goForward,
+         evaluateJS(String, (Result<Any?, Error>) -> Void)
+    
+    
+    public static func == (lhs: WebViewAction, rhs: WebViewAction) -> Bool {
+        if case .idle = lhs,
+           case .idle = rhs {
+            return true
+        }
+        if case let .load(requestLHS) = lhs,
+           case let .load(requestRHS) = rhs {
+            return requestLHS == requestRHS
+        }
+        if case let .loadHTML(htmlLHS) = lhs,
+           case let .loadHTML(htmlRHS) = rhs {
+            return htmlLHS == htmlRHS
+        }
+        if case .reload = lhs,
+           case .reload = rhs {
+            return true
+        }
+        if case .goBack = lhs,
+           case .goBack = rhs {
+            return true
+        }
+        if case .goForward = lhs,
+           case .goForward = rhs {
+            return true
+        }
+        if case let .evaluateJS(commandLHS, _) = lhs,
+           case let .evaluateJS(commandRHS, _) = rhs {
+            return commandLHS == commandRHS
+        }
+        return false
+    }
 }
 
-public struct WebViewState {
+public struct WebViewState: Equatable {
     public internal(set) var isLoading: Bool
     public internal(set) var pageTitle: String?
     public internal(set) var pageHTML: String?
@@ -25,6 +59,15 @@ public struct WebViewState {
                                            error: nil,
                                            canGoBack: false,
                                            canGoForward: false)
+    
+    public static func == (lhs: WebViewState, rhs: WebViewState) -> Bool {
+        lhs.isLoading == rhs.isLoading
+            && lhs.pageTitle == rhs.pageTitle
+            && lhs.pageHTML == rhs.pageHTML
+            && lhs.error?.localizedDescription == rhs.error?.localizedDescription
+            && lhs.canGoBack == rhs.canGoBack
+            && lhs.canGoForward == rhs.canGoForward
+    }
 }
 
 public class WebViewCoordinator: NSObject {
@@ -96,25 +139,66 @@ extension WebViewCoordinator: WKNavigationDelegate {
                 return
             }
         }
+        if let url = navigationAction.request.url,
+           let scheme = url.scheme,
+           let schemeHandler = self.webView.schemeHandlers[scheme] {
+            schemeHandler(url)
+            decisionHandler(.cancel)
+            return
+        }
         decisionHandler(.allow)
+    }
+}
+
+public struct WebViewConfig {
+    public static let `default` = WebViewConfig()
+    
+    public let javaScriptEnabled: Bool
+    public let allowsBackForwardNavigationGestures: Bool
+    public let allowsInlineMediaPlayback: Bool
+    public let mediaPlaybackRequiresUserAction: Bool
+    public let isScrollEnabled: Bool
+    public let isOpaque: Bool
+    public let backgroundColor: Color
+    
+    public init(javaScriptEnabled: Bool = true,
+                allowsBackForwardNavigationGestures: Bool = true,
+                allowsInlineMediaPlayback: Bool = true,
+                mediaPlaybackRequiresUserAction: Bool = false,
+                isScrollEnabled: Bool = true,
+                isOpaque: Bool = true,
+                backgroundColor: Color = .clear) {
+        self.javaScriptEnabled = javaScriptEnabled
+        self.allowsBackForwardNavigationGestures = allowsBackForwardNavigationGestures
+        self.allowsInlineMediaPlayback = allowsInlineMediaPlayback
+        self.mediaPlaybackRequiresUserAction = mediaPlaybackRequiresUserAction
+        self.isScrollEnabled = isScrollEnabled
+        self.isOpaque = isOpaque
+        self.backgroundColor = backgroundColor
     }
 }
 
 #if os(iOS)
 public struct WebView: UIViewRepresentable {
+    let config: WebViewConfig
     @Binding var action: WebViewAction
     @Binding var state: WebViewState
     let restrictedPages: [String]?
     let htmlInState: Bool
+    let schemeHandlers: [String: (URL) -> Void]
     
-    public init(action: Binding<WebViewAction>,
+    public init(config: WebViewConfig = .default,
+                action: Binding<WebViewAction>,
                 state: Binding<WebViewState>,
                 restrictedPages: [String]? = nil,
-                htmlInState: Bool = false) {
+                htmlInState: Bool = false,
+                schemeHandlers: [String: (URL) -> Void] = [:]) {
+        self.config = config
         _action = action
         _state = state
         self.restrictedPages = restrictedPages
         self.htmlInState = htmlInState
+        self.schemeHandlers = schemeHandlers
     }
     
     public func makeCoordinator() -> WebViewCoordinator {
@@ -123,15 +207,24 @@ public struct WebView: UIViewRepresentable {
     
     public func makeUIView(context: Context) -> WKWebView {
         let preferences = WKPreferences()
-        preferences.javaScriptEnabled = true
+        preferences.javaScriptEnabled = config.javaScriptEnabled
         
         let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = config.allowsInlineMediaPlayback
+        configuration.mediaPlaybackRequiresUserAction = config.mediaPlaybackRequiresUserAction
         configuration.preferences = preferences
         
         let webView = WKWebView(frame: CGRect.zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
-        webView.allowsBackForwardNavigationGestures = true
-        webView.scrollView.isScrollEnabled = true
+        webView.allowsBackForwardNavigationGestures = config.allowsBackForwardNavigationGestures
+        webView.scrollView.isScrollEnabled = config.isOpaque
+        webView.isOpaque = config.isOpaque
+        if #available(iOS 14.0, *) {
+            webView.backgroundColor = UIColor(config.backgroundColor)
+        } else {
+            webView.backgroundColor = .clear
+        }
+        
         return webView
     }
     
@@ -152,27 +245,43 @@ public struct WebView: UIViewRepresentable {
             uiView.goBack()
         case .goForward:
             uiView.goForward()
+        case .evaluateJS(let command, let callback):
+            uiView.evaluateJavaScript(command) { result, error in
+                if let error = error {
+                    callback(.failure(error))
+                } else {
+                    callback(.success(result))
+                }
+            }
         }
-        action = .idle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            action = .idle
+        }
     }
 }
 #endif
 
 #if os(macOS)
 public struct WebView: NSViewRepresentable {
+    let config: WebViewConfig
     @Binding var action: WebViewAction
     @Binding var state: WebViewState
     let restrictedPages: [String]?
     let htmlInState: Bool
+    let schemeHandlers: [String: (URL) -> Void]
     
-    public init(action: Binding<WebViewAction>,
+    public init(config: WebViewConfig = .default,
+                action: Binding<WebViewAction>,
                 state: Binding<WebViewState>,
                 restrictedPages: [String]? = nil,
-                htmlInState: Bool = false) {
+                htmlInState: Bool = false,
+                schemeHandlers: [String: (URL) -> Void] = [:]) {
+        self.config = config
         _action = action
         _state = state
         self.restrictedPages = restrictedPages
         self.htmlInState = htmlInState
+        self.schemeHandlers = schemeHandlers
     }
     
     public func makeCoordinator() -> WebViewCoordinator {
@@ -181,14 +290,15 @@ public struct WebView: NSViewRepresentable {
     
     public func makeNSView(context: Context) -> WKWebView {
         let preferences = WKPreferences()
-        preferences.javaScriptEnabled = true
+        preferences.javaScriptEnabled = config.javaScriptEnabled
         
         let configuration = WKWebViewConfiguration()
         configuration.preferences = preferences
         
         let webView = WKWebView(frame: CGRect.zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
-        webView.allowsBackForwardNavigationGestures = true
+        webView.allowsBackForwardNavigationGestures = config.allowsBackForwardNavigationGestures
+        
         return webView
     }
     
@@ -209,8 +319,18 @@ public struct WebView: NSViewRepresentable {
             uiView.goBack()
         case .goForward:
             uiView.goForward()
+        case .evaluateJS(let command, let callback):
+            uiView.evaluateJavaScript(command) { result, error in
+                if let error = error {
+                    callback(.failure(error))
+                } else {
+                    callback(.success(result))
+                }
+            }
         }
-        action = .idle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            action = .idle
+        }
     }
 }
 #endif
