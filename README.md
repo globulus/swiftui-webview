@@ -27,7 +27,7 @@ This component is distributed as a **Swift package**.
    + `reload`
    + `goBack`
    + `goForward`
-   + `evaluateJS(String, (Result<Any?, Error>) -> Void)
+   + `evaluateJS(String, (Result<Any?, Error>) -> Void)` - evaluate any JavaScript command in the web view and get the result via the callback.
  * The **state** binding reports back the current state of the WebView. Available data:
    + `isLoading` - `true` if the WebView is currently loading a page.
    + `pageTitle` - the title of the currently loaded page, or `nil` if it can't be obtained.
