@@ -156,7 +156,7 @@ public struct WebViewConfig {
     public let javaScriptEnabled: Bool
     public let allowsBackForwardNavigationGestures: Bool
     public let allowsInlineMediaPlayback: Bool
-    public let mediaPlaybackRequiresUserAction: Bool
+    public let mediaTypesRequiringUserActionForPlayback: WKAudiovisualMediaTypes
     public let isScrollEnabled: Bool
     public let isOpaque: Bool
     public let backgroundColor: Color
@@ -164,14 +164,14 @@ public struct WebViewConfig {
     public init(javaScriptEnabled: Bool = true,
                 allowsBackForwardNavigationGestures: Bool = true,
                 allowsInlineMediaPlayback: Bool = true,
-                mediaPlaybackRequiresUserAction: Bool = false,
+                mediaTypesRequiringUserActionForPlayback: WKAudiovisualMediaTypes = [],
                 isScrollEnabled: Bool = true,
                 isOpaque: Bool = true,
                 backgroundColor: Color = .clear) {
         self.javaScriptEnabled = javaScriptEnabled
         self.allowsBackForwardNavigationGestures = allowsBackForwardNavigationGestures
         self.allowsInlineMediaPlayback = allowsInlineMediaPlayback
-        self.mediaPlaybackRequiresUserAction = mediaPlaybackRequiresUserAction
+        self.mediaTypesRequiringUserActionForPlayback = mediaTypesRequiringUserActionForPlayback
         self.isScrollEnabled = isScrollEnabled
         self.isOpaque = isOpaque
         self.backgroundColor = backgroundColor
@@ -211,7 +211,7 @@ public struct WebView: UIViewRepresentable {
         
         let configuration = WKWebViewConfiguration()
         configuration.allowsInlineMediaPlayback = config.allowsInlineMediaPlayback
-        configuration.mediaPlaybackRequiresUserAction = config.mediaPlaybackRequiresUserAction
+        configuration.mediaTypesRequiringUserActionForPlayback = config.mediaTypesRequiringUserActionForPlayback
         configuration.preferences = preferences
         
         let webView = WKWebView(frame: CGRect.zero, configuration: configuration)
