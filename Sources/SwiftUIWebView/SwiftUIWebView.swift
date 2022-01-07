@@ -52,13 +52,15 @@ public struct WebViewState: Equatable {
     public internal(set) var error: Error?
     public internal(set) var canGoBack: Bool
     public internal(set) var canGoForward: Bool
+  public internal(set) var moveActionToIdle: Bool
     
     public static let empty = WebViewState(isLoading: false,
                                            pageTitle: nil,
                                            pageHTML: nil,
                                            error: nil,
                                            canGoBack: false,
-                                           canGoForward: false)
+                                           canGoForward: false,
+    moveActionToIdle: false)
     
     public static func == (lhs: WebViewState, rhs: WebViewState) -> Bool {
         lhs.isLoading == rhs.isLoading
@@ -67,6 +69,7 @@ public struct WebViewState: Equatable {
             && lhs.error?.localizedDescription == rhs.error?.localizedDescription
             && lhs.canGoBack == rhs.canGoBack
             && lhs.canGoForward == rhs.canGoForward
+      && lhs.moveActionToIdle == rhs.moveActionToIdle
     }
 }
 
@@ -77,9 +80,18 @@ public class WebViewCoordinator: NSObject {
         self.webView = webView
     }
     
-    func setLoading(_ isLoading: Bool, error: Error? = nil) {
+    func setLoading(_ isLoading: Bool,
+                    canGoBack: Bool? = nil,
+                    canGoForward: Bool? = nil,
+                    error: Error? = nil) {
         var newState =  webView.state
         newState.isLoading = isLoading
+        if let canGoBack = canGoBack {
+            newState.canGoBack = canGoBack
+        }
+        if let canGoForward = canGoForward {
+            newState.canGoForward = canGoForward
+        }
         if let error = error {
             newState.error = error
         }
@@ -89,7 +101,9 @@ public class WebViewCoordinator: NSObject {
 
 extension WebViewCoordinator: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        setLoading(false)
+        setLoading(false,
+                   canGoBack: webView.canGoBack,
+                   canGoForward: webView.canGoForward)
         
         webView.evaluateJavaScript("document.title") { (response, error) in
             if let title = response as? String {
@@ -123,11 +137,9 @@ extension WebViewCoordinator: WKNavigationDelegate {
     }
     
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        var newState = self.webView.state
-        newState.isLoading = true
-        newState.canGoBack = webView.canGoBack
-        newState.canGoForward = webView.canGoForward
-        self.webView.state = newState
+        setLoading(true,
+                   canGoBack: webView.canGoBack,
+                   canGoForward: webView.canGoForward)
     }
     
     public func webView(_ webView: WKWebView,
@@ -254,9 +266,167 @@ public struct WebView: UIViewRepresentable {
                 }
             }
         }
+      var newState = state
+      newState.moveActionToIdle = true
+      state = newState
+      
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             action = .idle
         }
+    }
+}
+
+struct WebViewActionPreferenceKey: PreferenceKey {
+  static var defaultValue = WebViewAction.idle
+
+  static func reduce(value: inout WebViewAction, nextValue: () -> WebViewAction) {
+    value = nextValue()
+  }
+}
+
+struct WebViewWrapper: View {
+  let config: WebViewConfig
+  @Binding var action: WebViewAction
+  @Binding var state: WebViewState
+  let restrictedPages: [String]?
+  let htmlInState: Bool
+  let schemeHandlers: [String: (URL) -> Void]
+  
+  public init(config: WebViewConfig = .default,
+              action: Binding<WebViewAction>,
+              state: Binding<WebViewState>,
+              restrictedPages: [String]? = nil,
+              htmlInState: Bool = false,
+              schemeHandlers: [String: (URL) -> Void] = [:]) {
+      self.config = config
+      _action = action
+      _state = state
+      self.restrictedPages = restrictedPages
+      self.htmlInState = htmlInState
+      self.schemeHandlers = schemeHandlers
+  }
+  
+  var body: some View {
+    WebView(config: config,
+            action: $action,
+            state: $state,
+            restrictedPages: restrictedPages,
+            htmlInState: htmlInState,
+            schemeHandlers: schemeHandlers)
+      .background(Group {
+        if state.moveActionToIdle {
+          Color.clear
+            .preference(key: WebViewActionPreferenceKey.self, value: .idle)
+        }
+      })
+      .onPreferenceChange(WebViewActionPreferenceKey.self) { value in
+        action = value
+        if value == .idle {
+          var newState = state
+          newState.moveActionToIdle = false
+          state = newState
+        }
+      }
+  }
+  
+}
+
+struct WebViewWrapperTest: View {
+    @State private var action = WebViewAction.idle
+    @State private var state = WebViewState.empty
+    @State private var address = "https://www.google.com"
+    
+    var body: some View {
+        VStack {
+            titleView
+            navigationToolbar
+            errorView
+            Divider()
+            WebViewWrapper(action: $action,
+                    state: $state,
+                    restrictedPages: ["apple.com"],
+                    htmlInState: true)
+            Text(state.pageHTML ?? "")
+                .lineLimit(nil)
+            Spacer()
+        }
+    }
+    
+    private var titleView: some View {
+        Text(state.pageTitle ?? "Load a page")
+            .font(.system(size: 24))
+    }
+    
+    private var navigationToolbar: some View {
+        HStack(spacing: 10) {
+            Button("Test HTML") {
+                action = .loadHTML("<html><body><b>Hello World!</b></body></html>")
+            }
+            TextField("Address", text: $address)
+            if state.isLoading {
+                if #available(iOS 14, macOS 11, *) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                } else {
+                    Text("Loading")
+                }
+            }
+            Spacer()
+            Button("Go") {
+                if let url = URL(string: address) {
+                    action = .load(URLRequest(url: url))
+                }
+            }
+            Button(action: {
+                action = .reload
+            }) {
+                if #available(iOS 14, macOS 11, *) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .imageScale(.large)
+                } else {
+                    Text("Reload")
+                }
+            }
+            if state.canGoBack {
+                Button(action: {
+                    action = .goBack
+                }) {
+                    if #available(iOS 14, macOS 11, *) {
+                        Image(systemName: "chevron.left")
+                            .imageScale(.large)
+                    } else {
+                        Text("<")
+                    }
+                }
+            }
+            if state.canGoForward {
+                Button(action: {
+                    action = .goForward
+                }) {
+                    if #available(iOS 14, macOS 11, *) {
+                        Image(systemName: "chevron.right")
+                            .imageScale(.large)
+                    } else {
+                        Text(">")
+                    }
+                }
+            }
+        }.padding()
+    }
+    
+    private var errorView: some View {
+        Group {
+            if let error = state.error {
+                Text(error.localizedDescription)
+                    .foregroundColor(.red)
+            }
+        }
+    }
+}
+
+struct WebViewWrapper_Previews: PreviewProvider {
+    static var previews: some View {
+        WebViewWrapperTest()
     }
 }
 #endif
