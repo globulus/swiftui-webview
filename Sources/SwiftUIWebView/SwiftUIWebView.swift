@@ -270,9 +270,6 @@ public struct WebView: UIViewRepresentable {
       newState.moveActionToIdle = true
       state = newState
       
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            action = .idle
-        }
     }
 }
 
@@ -338,6 +335,7 @@ struct WebViewWrapperTest: View {
     
     var body: some View {
         VStack {
+            Text(String(describing: action))
             titleView
             navigationToolbar
             errorView
