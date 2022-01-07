@@ -16,7 +16,7 @@ This component is distributed as a **Swift package**.
   + `javaScriptEnabled`
   + `allowsBackForwardNavigationGestures`
   + `allowsInlineMediaPlayback`
-  + `mediaPlaybackRequiresUserAction`
+  + `mediaTypesRequiringUserActionForPlayback`
   + `isScrollEnabled`
   + `isOpaque`
   + `backgroundColor`
