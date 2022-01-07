@@ -125,6 +125,7 @@ For a more detailed description of the code, [visit this recipe](https://swiftui
 
 ## Changelog
 
+* 1.0.4 - Update deprecated mediaPlaybackRequiresUserAction.
 * 1.0.3 - Added config, JS evaluation and scheme handlers.
 * 1.0.2 - Added site HTML as response.
 * 1.0.1 - Added suport for loading custom HTML.
