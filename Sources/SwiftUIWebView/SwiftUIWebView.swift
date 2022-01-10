@@ -72,24 +72,38 @@ public struct WebViewState: Equatable {
 
 public class WebViewCoordinator: NSObject {
     private let webView: WebView
+    var actionInProgress = false
     
     init(webView: WebView) {
         self.webView = webView
     }
     
-    func setLoading(_ isLoading: Bool, error: Error? = nil) {
+    func setLoading(_ isLoading: Bool,
+                    canGoBack: Bool? = nil,
+                    canGoForward: Bool? = nil,
+                    error: Error? = nil) {
         var newState =  webView.state
         newState.isLoading = isLoading
+        if let canGoBack = canGoBack {
+            newState.canGoBack = canGoBack
+        }
+        if let canGoForward = canGoForward {
+            newState.canGoForward = canGoForward
+        }
         if let error = error {
             newState.error = error
         }
         webView.state = newState
+        webView.action = .idle
+        actionInProgress = false
     }
 }
 
 extension WebViewCoordinator: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        setLoading(false)
+      setLoading(false,
+                 canGoBack: webView.canGoBack,
+                 canGoForward: webView.canGoForward)
         
         webView.evaluateJavaScript("document.title") { (response, error) in
             if let title = response as? String {
@@ -123,11 +137,9 @@ extension WebViewCoordinator: WKNavigationDelegate {
     }
     
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        var newState = self.webView.state
-        newState.isLoading = true
-        newState.canGoBack = webView.canGoBack
-        newState.canGoForward = webView.canGoForward
-        self.webView.state = newState
+      setLoading(true,
+                 canGoBack: webView.canGoBack,
+                 canGoForward: webView.canGoForward)
     }
     
     public func webView(_ webView: WKWebView,
@@ -136,6 +148,7 @@ extension WebViewCoordinator: WKNavigationDelegate {
         if let host = navigationAction.request.url?.host {
             if self.webView.restrictedPages?.first(where: { host.contains($0) }) != nil {
                 decisionHandler(.cancel)
+                setLoading(false)
                 return
             }
         }
@@ -229,9 +242,10 @@ public struct WebView: UIViewRepresentable {
     }
     
     public func updateUIView(_ uiView: WKWebView, context: Context) {
-        if action == .idle {
+        if action == .idle || context.coordinator.actionInProgress {
             return
         }
+        context.coordinator.actionInProgress = true
         switch action {
         case .idle:
             break
@@ -253,9 +267,6 @@ public struct WebView: UIViewRepresentable {
                     callback(.success(result))
                 }
             }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            action = .idle
         }
     }
 }
