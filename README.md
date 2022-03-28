@@ -125,6 +125,7 @@ For a more detailed description of the code, [visit this recipe](https://swiftui
 
 ## Changelog
 
+* 1.0.6 - Fixed bug related to `isScrollEnabled`.
 * 1.0.5 - Fixed bugs related to `canGoBack` and `canGoForward`, prevented multiple overriding actions happening at the same time.
 * 1.0.4 - Updated deprecated mediaPlaybackRequiresUserAction.
 * 1.0.3 - Added config, JS evaluation and scheme handlers.
