@@ -8,7 +8,17 @@ Fully functional, SwiftUI-ready WebView for iOS 13+ and MacOS 10.15+. Actions an
 
 ## Installation
 
-This component is distributed as a **Swift package**.
+This component is distributed as a **Swift package**. Just add this URL to your package list:
+
+```text
+https://github.com/globulus/swiftui-webview
+```
+
+You can also use **CocoaPods**:
+
+```ruby
+pod 'SwiftUIWebView', '~> 1.0.7'
+```
 
 ## Sample usage
 
