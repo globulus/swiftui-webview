@@ -47,6 +47,7 @@ public enum WebViewAction: Equatable {
 
 public struct WebViewState: Equatable {
     public internal(set) var isLoading: Bool
+    public internal(set) var pageURL: String?
     public internal(set) var pageTitle: String?
     public internal(set) var pageHTML: String?
     public internal(set) var error: Error?
@@ -54,6 +55,7 @@ public struct WebViewState: Equatable {
     public internal(set) var canGoForward: Bool
     
     public static let empty = WebViewState(isLoading: false,
+                                           pageURL: nil,
                                            pageTitle: nil,
                                            pageHTML: nil,
                                            error: nil,
@@ -62,6 +64,7 @@ public struct WebViewState: Equatable {
     
     public static func == (lhs: WebViewState, rhs: WebViewState) -> Bool {
         lhs.isLoading == rhs.isLoading
+            && lhs.pageURL == rhs.pageURL
             && lhs.pageTitle == rhs.pageTitle
             && lhs.pageHTML == rhs.pageHTML
             && lhs.error?.localizedDescription == rhs.error?.localizedDescription
@@ -109,6 +112,14 @@ extension WebViewCoordinator: WKNavigationDelegate {
             if let title = response as? String {
                 var newState = self.webView.state
                 newState.pageTitle = title
+                self.webView.state = newState
+            }
+        }
+      
+        webView.evaluateJavaScript("document.URL.toString()") { (response, error) in
+            if let url = response as? String {
+                var newState = self.webView.state
+                newState.pageURL = url
                 self.webView.state = newState
             }
         }
@@ -368,7 +379,7 @@ struct WebViewTest: View {
     }
     
     private var titleView: some View {
-        Text(state.pageTitle ?? "Load a page")
+      Text(String(format: "%@ - %@", state.pageTitle ?? "Load a page", state.pageURL ?? "No URL"))
             .font(.system(size: 24))
     }
     

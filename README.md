@@ -30,6 +30,7 @@ This component is distributed as a **Swift package**.
    + `evaluateJS(String, (Result<Any?, Error>) -> Void)` - evaluate any JavaScript command in the web view and get the result via the callback.
  * The **state** binding reports back the current state of the WebView. Available data:
    + `isLoading` - `true` if the WebView is currently loading a page.
+   + `pageURL` - the URL of the currently loaded page, or `nil` if it can't be obtained.
    + `pageTitle` - the title of the currently loaded page, or `nil` if it can't be obtained.
    + `pageHTML` - the HTML code of the page content. Set `htmlInState: true` in `WebView` initializer to receive this update.
    + `error` - set if an error ocurred while loading the page, `nil` otherwise.
@@ -61,7 +62,7 @@ struct WebViewTest: View {
     }
     
     private var titleView: some View {
-        Text(state.pageTitle ?? "Load a page")
+        Text(String(format: "%@ - %@, state.pageTitle ?? "Load a page", state.pageURL ?? "No URL"))
             .font(.system(size: 24))
     }
     
@@ -125,6 +126,7 @@ For a more detailed description of the code, [visit this recipe](https://swiftui
 
 ## Changelog
 
+* 1.0.7 - Added `pageURL` state property.
 * 1.0.6 - Fixed bug related to `isScrollEnabled`.
 * 1.0.5 - Fixed bugs related to `canGoBack` and `canGoForward`, prevented multiple overriding actions happening at the same time.
 * 1.0.4 - Updated deprecated mediaPlaybackRequiresUserAction.
