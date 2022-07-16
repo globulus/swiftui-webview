@@ -174,6 +174,18 @@ extension WebViewCoordinator: WKNavigationDelegate {
     }
 }
 
+extension WebViewCoordinator: WKUIDelegate {
+  public func webView(_ webView: WKWebView,
+                      createWebViewWith configuration: WKWebViewConfiguration,
+                      for navigationAction: WKNavigationAction,
+                      windowFeatures: WKWindowFeatures) -> WKWebView? {
+    if navigationAction.targetFrame == nil {
+      webView.load(navigationAction.request)
+    }
+    return nil
+  }
+}
+
 public struct WebViewConfig {
     public static let `default` = WebViewConfig()
     
@@ -240,6 +252,7 @@ public struct WebView: UIViewRepresentable {
         
         let webView = WKWebView(frame: CGRect.zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = config.allowsBackForwardNavigationGestures
         webView.scrollView.isScrollEnabled = config.isScrollEnabled
         webView.isOpaque = config.isOpaque
@@ -319,6 +332,7 @@ public struct WebView: NSViewRepresentable {
         
         let webView = WKWebView(frame: CGRect.zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = config.allowsBackForwardNavigationGestures
         
         return webView
@@ -386,7 +400,12 @@ struct WebViewTest: View {
     private var navigationToolbar: some View {
         HStack(spacing: 10) {
             Button("Test HTML") {
-                action = .loadHTML("<html><body><b>Hello World!</b></body></html>")
+                action = .loadHTML("""
+              <html><body>
+                <b>Hello World!</b><br />
+                <a href="https://www.google.com" target="_blank">Go to google</a>
+              </body></html>
+              """)
             }
             TextField("Address", text: $address)
             if state.isLoading {

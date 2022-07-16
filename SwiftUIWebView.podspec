@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'SwiftUIWebView'
-  s.version          = '1.0.7'
+  s.version          = '1.0.8'
   s.summary          = 'Fully functional, SwiftUI-ready WebView for iOS 13+ and MacOS 10.15+.'
   s.homepage         = 'https://github.com/globulus/swiftui-webview'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }

@@ -136,6 +136,7 @@ For a more detailed description of the code, [visit this recipe](https://swiftui
 
 ## Changelog
 
+* 1.0.8 - Fixed links with `target="_blank"`.
 * 1.0.7 - Added `pageURL` state property.
 * 1.0.6 - Fixed bug related to `isScrollEnabled`.
 * 1.0.5 - Fixed bugs related to `canGoBack` and `canGoForward`, prevented multiple overriding actions happening at the same time.
