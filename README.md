@@ -17,7 +17,7 @@ https://github.com/globulus/swiftui-webview
 You can also use **CocoaPods**:
 
 ```ruby
-pod 'SwiftUIWebView', '~> 1.0.7'
+pod 'SwiftUIWebView', '~> 1.0.8'
 ```
 
 ## Sample usage
